@@ -8,9 +8,9 @@
 #include "cryptopp/filters.h"
 #include "cryptopp/modes.h"
 #include "b64.h"
-#include "CConfig.h"
-#include "debug_log.h"
+#include "common.h"
 #include "protobuf_up.h"
+
 using websocketpp::connection_hdl;
 
 #define BUFFLEN 65535
@@ -24,13 +24,16 @@ public:
 	int recv();
 	int handle_input();
 	int handle_output(std::string sInput);
-	bool connect(const char *ip, int port);
 	int web_socket_close();
 	int on_proxy_close();
+	bool connect_to_login();
+	bool connect_to_gate();
 	inline int getfd();
 	inline connection_hdl gethdl();
 	inline void set_proxy_attr(connection_hdl hdl, Proxy_Callback *pc);
 private:
+	bool connect(const char *ip, int port);
+	int process_block(Block_Buffer& buf);
 	void fetch_substantial_info(char *input);
 	std::string encrypt(std::string plainText);
 private:
@@ -40,6 +43,7 @@ private:
 	connection_hdl hdl_;
 	Proxy_Callback *pc_;
 	Protobuf_Up *protobuf_up_;
+	bool is_gate_;
 };
 
 inline int CWs_Proxy::getfd(){
@@ -54,6 +58,5 @@ inline void CWs_Proxy::set_proxy_attr(connection_hdl hdl, Proxy_Callback *pc){
 	hdl_ = hdl;
 	pc_ = pc;
 }
-
 
 #endif

@@ -101,11 +101,12 @@ void Network::register_proxy(CWs_Proxy *proxy){
 	ctl_event(fd, true);
 }
 
-void Network::degister_proxy(CWs_Proxy *proxy){
+void Network::degister_proxy(CWs_Proxy *proxy, bool reconnect){
 	int fd = proxy->getfd();
 	proxy_map_.erase(fd);
 	ctl_event(fd, false);
-	proxy->web_socket_close();
+	if(!reconnect)
+		proxy->web_socket_close();
 }
 
 CWs_Proxy *Network::get_proxy_by_fd(int fd){

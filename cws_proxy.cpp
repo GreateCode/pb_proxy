@@ -4,11 +4,12 @@
 #include "memory_pool.h"
 
 CWs_Proxy::CWs_Proxy():
-	fd_(socket(AF_INET, SOCK_STREAM, 0)),
+	fd_(-1),
 	buff_(),
 	buff_size_(0),
 	hdl_(),
 	pc_(),
+	is_gate_(false),
 	protobuf_up_(new Protobuf_Up)
 {
 }
@@ -21,46 +22,83 @@ int CWs_Proxy::recv(){
 	return buff_size_;
 }
 
-char *parse_to_hex(char *strhex, char *buff_, int buff_size_){
-	for(int i = 0; i < buff_size_; i++){
-		sprintf(strhex + i * 5, "0x%02x ", (unsigned char)buff_[i]);
-	}
-	return strhex;
-}
-
 int CWs_Proxy::handle_input(){
-	//char strhex[65535 * 5] = {};
 	DEBUG_LOG("fd:%d 返回消息至websocket", fd_);
-	//DEBUG_LOG("字节流：%s", parse_to_hex(strhex, buff_, buff_size_));
-	pc_->on_proxy_recv(hdl_, buff_, buff_size_, false);
-	DEBUG_LOG("已返回%d字节", buff_size_);
+	if(is_gate_){
+		pc_->on_proxy_recv(hdl_, buff_, buff_size_, false);
+		DEBUG_LOG("已返回%d字节", buff_size_);
+	}
+	else {
+		Block_Buffer buf;
+		buf.copy(buff_, buff_size_);
+		process_block(buf);
+	}
 	return 0;
 }
 
 int CWs_Proxy::handle_output(std::string sInput){
-	char *strhex = NULL;
 	DEBUG_LOG("fd:%d 转发消息至proxy", fd_);
 	size_t len;
 	unsigned char * p = base64decode(sInput.c_str(),&len);
 	int write_size =  write(fd_, (char *)p, len);
 	fetch_substantial_info((char *)p);
-	//int write_size =  write(fd_, sInput.c_str(), sInput.length());
-	strhex = (char *)MEMORY_POOL->get_memory(len * 5);
-	DEBUG_LOG("发送字节流：%s", parse_to_hex(strhex, (char *)p, len));
-	MEMORY_POOL->free_memory(strhex);
 	DEBUG_LOG("已发送%d字节", write_size);
 	return write_size;
 }
-	
+
+int CWs_Proxy::process_block(Block_Buffer& buf){
+	uint16_t len = buf.read_uint16();
+	uint32_t msg_id = buf.read_uint32();
+	int32_t status = buf.read_int32();
+
+	MSG_500000 msg;
+	msg.deserialize(buf);
+	DEBUG_LOG("len is %d, msg_id is %d, status is %d", msg_id, status);
+	DEBUG_LOG("ip is %s, port is %d, session is %s", msg.ip.c_str(), msg.port, msg.session.c_str());
+	if(status == 0){
+		connect_to_gate();
+		is_gate_ = true;
+	}
+	return 0;
+}
+
+bool CWs_Proxy::connect_to_login(){
+	fd_ = socket(AF_INET, SOCK_STREAM, 0);
+	connect(pc_->get_config().login_ip, pc_->get_config().login_port);
+	MSG_100000 msg;
+	msg.reset();
+	std::string account = "alimi";
+	std::string password = "testpassword";
+	msg.account = account;
+	msg.password = password;
+	Block_Buffer buf;
+	buf.make_client_message(1000, 1000, REQ_CLIENT_REGISTER, 0);
+	msg.serialize(buf);
+	buf.finish_message();
+	write(fd_, (char *)buf.get_read_ptr(), buf.readable_bytes());
+	return true;
+}
+
+bool CWs_Proxy::connect_to_gate(){
+	if(fd_ != -1){
+		NETWORK->degister_proxy(this, true);
+	}
+	fd_ = socket(AF_INET, SOCK_STREAM, 0);
+	connect(pc_->get_config().proxy_ip, pc_->get_config().proxy_port);
+	NETWORK->register_proxy(this);
+	return true;
+}
+
 bool CWs_Proxy::connect(const char *ip, int port){
 	struct sockaddr_in clientService;
 	clientService.sin_family = AF_INET;
 	clientService.sin_addr.s_addr = inet_addr(ip);
 	clientService.sin_port = htons(port);
 	if(::connect(fd_, (struct sockaddr *)&clientService, sizeof(clientService)) < 0){
-		DEBUG_LOG("连接proxy服务器失败，错误代码：%d", errno);
+		DEBUG_LOG("连接服务器失败，错误代码：%d", errno);
 		return false;
 	}
+	DEBUG_LOG("新连接建立！fd是%d", fd_);
 	return true;
 }
 

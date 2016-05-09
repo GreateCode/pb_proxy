@@ -18,7 +18,9 @@ public:
 	void config_init(boost::property_tree::ptree pt);
 
 	char proxy_ip[16];
+	char login_ip[16];
 	int proxy_port;
+	int login_port;
 	int ws_port;
 };
 

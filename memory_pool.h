@@ -47,6 +47,25 @@ private:
 };
 
 #define MEMORY_POOL Memory_Pool::get_instance()
+#define MEM_MALLOC(size) Memory_Pool::get_instance()->get_memory(size)
+#define MEM_FREE(data) Memory_Pool::get_instance()->free_memory(data)
+
+class Memory_Tool {
+public:
+	Memory_Tool(char **data, int size){
+		*data = MEM_MALLOC(size);
+		data_ = *data;
+		size_ = size;
+	}
+	~Memory_Tool(){
+		MEM_FREE(data_);
+	}
+private:
+	char *data_;
+	int size_;
+};
+
+#define MEM_INIT(data, size) Memory_Tool tool(&(data), (size))
 
 #endif
 

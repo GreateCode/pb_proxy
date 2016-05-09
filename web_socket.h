@@ -21,7 +21,14 @@ public:
 	virtual bool on_proxy_recv(connection_hdl hdl, char* buf, int size, bool bString) = 0;
 	virtual bool on_proxy_close(connection_hdl hdl) = 0;
 	virtual bool web_socket_close(CWs_Proxy *proxy) = 0;
+	CConfig get_config();
+protected:
+	CConfig configs;
 };
+
+inline CConfig Proxy_Callback::get_config(){
+	return configs;
+}
 
 class Web_Socket : public Proxy_Callback {
 typedef std::map<connection_hdl, CWs_Proxy*> HDL_PROXY_MAP;
@@ -39,8 +46,8 @@ private:
 	void on_close(connection_hdl hdl);
 private:
 	HDL_PROXY_MAP proxy_map_;
-	CConfig configs;
 	server m_server;
 };
+
 
 #endif

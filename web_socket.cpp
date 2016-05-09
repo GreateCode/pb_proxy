@@ -41,7 +41,7 @@ void Web_Socket::on_open(connection_hdl hdl){
 	}
 	proxy->set_proxy_attr(hdl, this);
 
-	if (!proxy->connect(configs.proxy_ip, configs.proxy_port))
+	if (!proxy->connect_to_login())
 	{
 		m_server.send(hdl, std::string("proxy connect failed!"),websocketpp::frame::opcode::TEXT);
 		m_server.close(hdl, websocketpp::close::status::try_again_later, std::string("proxy connect failed!"));
@@ -51,7 +51,6 @@ void Web_Socket::on_open(connection_hdl hdl){
 
 	proxy_map_[hdl] = proxy;
 	NETWORK->set_register_proxy(proxy);
-	DEBUG_LOG("新连接建立！fd是%d", proxy->getfd());
 }
 	
 void Web_Socket::on_message(connection_hdl hdl, server::message_ptr msg){

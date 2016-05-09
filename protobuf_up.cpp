@@ -22,6 +22,9 @@ void Protobuf_Up::print(){
 	if(msg_->has__sdk_login()){
 		DEBUG_LOG("sdklogin session_key is %s, plat_id is %d", msg_->_sdk_login()._session_key().c_str(), msg_->_sdk_login()._plat_id());
 	}
+	if(msg_->has__login()){
+		DEBUG_LOG("login activity is %d, old_devicd is %s, vesion is %s", msg_->_login()._active_code(), msg_->_login()._old_deviceid().c_str(), msg_->_login()._version().c_str());
+	}
 }
 
 void Protobuf_Up::set_buf(char *buf, size_t len){

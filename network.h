@@ -30,9 +30,9 @@ private:
 	void run();
 	void epoll_loop(int timeout);
 	static void *worker(void *arg);
-	void register_proxy(CWs_Proxy *proxy);
-	void degister_proxy(CWs_Proxy *proxy);
 public:
+	void register_proxy(CWs_Proxy *proxy);
+	void degister_proxy(CWs_Proxy *proxy, bool reconnect = false);
 	static Network *get_share_network();
 	static void close_network();
 	CWs_Proxy *get_proxy_by_fd(int fd);

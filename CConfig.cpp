@@ -32,5 +32,8 @@ void CConfig::config_init(boost::property_tree::ptree  pt)
     ws_port = pt.get<int>("wsproxy.ws_port");
     string ip = pt.get<string>("wsproxy.proxy_ip");
     strcpy(proxy_ip,ip.c_str());
+    ip = pt.get<string>("wsproxy.login_ip");
+    strcpy(login_ip,ip.c_str());
     proxy_port = pt.get<int>("wsproxy.proxy_port");
+    login_port = pt.get<int>("wsproxy.login_port");
 }

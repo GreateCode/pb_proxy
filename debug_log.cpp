@@ -2,13 +2,13 @@
 #include "memory_pool.h"
 
 void DEBUG_LOG(const char *msg, ...){
-	char *message = MEMORY_POOL->get_memory(strlen(msg));
+	char *message;
+	MEM_INIT(message, strlen(msg));
 	va_list args;
 	va_start(args, msg);
 	vsprintf(message, msg, args);
 	va_end(args);
 	LOG::get_share_log()->write_log(message);
-	MEMORY_POOL->free_memory(message);
 }
 
 LOG *LOG::m_log = NULL;
@@ -54,7 +54,7 @@ LOG *LOG::get_share_log(){
 void LOG::write_log(const char *msg){
 	time(&tim); 
 	t = localtime(&tim);
-	message = MEMORY_POOL->get_memory(strlen(msg) + 12);
+	MEM_INIT(message, strlen(msg) + 12);
 	sprintf(message, "[%02d:%02d:%02d] %s\n", t->tm_hour, t->tm_min, t->tm_sec, msg);
 #ifdef __DEBUG_TO_LOG__
 	if(t->tm_mday != last_log_time.tm_mday || t->tm_mon != last_log_time.tm_mon
@@ -66,6 +66,5 @@ void LOG::write_log(const char *msg){
 	printf("\n%s", message);
 	fflush(stdout);
 #endif
-	MEMORY_POOL->free_memory(message);
 }
 
